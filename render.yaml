@@ -1,0 +1,62 @@
+##############################################################################
+# render.yaml – DiffSight
+#
+# Two services:
+#   1. diffsight-backend  – FastAPI / Python (Web Service)
+#   2. diffsight-frontend – Next.js / Node.js (Web Service)
+#
+# Deploy by connecting this repository to Render and letting it detect the file.
+# After first deploy, set DIFFSIGHT_ORIGINS in the backend service's environment
+# to the actual frontend URL (e.g. https://diffsight-frontend.onrender.com).
+##############################################################################
+
+services:
+  # ── Backend ──────────────────────────────────────────────────────────────
+  - type: web
+    name: diffsight-backend
+    runtime: python
+    region: oregon          # Change to match your preferred region
+    plan: free              # Upgrade to 'starter' or higher for production
+
+    rootDir: backend
+
+    # Render uses the Python version from runtime.txt automatically.
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      # Replace the value below with your actual frontend URL after the first deploy.
+      # You can also set this from the Render dashboard → Environment tab.
+      - key: DIFFSIGHT_ORIGINS
+        value: https://diffsight-frontend.onrender.com
+
+  # ── Frontend ─────────────────────────────────────────────────────────────
+  - type: web
+    name: diffsight-frontend
+    runtime: node
+    region: oregon
+
+    plan: free
+
+    rootDir: frontend
+
+    buildCommand: npm ci && npm run build
+    startCommand: node .next/standalone/server.js
+
+    healthCheckPath: /
+
+    envVars:
+      - key: NODE_VERSION
+        value: "20.17.0"
+      # Replace the value below with your actual backend WebSocket URL after the first deploy.
+      # Use wss:// in production (Render provides TLS automatically).
+      - key: NEXT_PUBLIC_WS_URL
+        value: wss://diffsight-backend.onrender.com/ws/analyze
+      - key: PORT
+        value: "3000"
+      - key: HOSTNAME
+        value: "0.0.0.0"
