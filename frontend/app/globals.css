@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+/* ─── Body ─────────────────────────────────────────────────── */
+body {
+  @apply bg-zinc-950 font-sans text-zinc-200 antialiased;
+  background-image:
+    radial-gradient(60rem 28rem at 12% -8%, rgba(139, 92, 246, 0.16), transparent),
+    radial-gradient(50rem 28rem at 96% 0%, rgba(34, 211, 238, 0.1), transparent);
+  background-attachment: fixed;
+}
+
+/* ─── Selection ─────────────────────────────────────────────── */
+::selection {
+  @apply bg-violet-500/30 text-zinc-50;
+}
+
+/* ─── Focus ring ─────────────────────────────────────────────── */
+:focus-visible {
+  @apply outline outline-2 outline-offset-2 outline-violet-500;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-zinc-700;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-600;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme("colors.zinc.700") transparent;
+}
+
+/* ─── ReactFlow overrides ────────────────────────────────────── */
+.react-flow__attribution {
+  background: transparent !important;
+}
+
+.react-flow__controls {
+  @apply rounded-xl border border-white/10 bg-zinc-900/80 backdrop-blur;
+  box-shadow: none !important;
+}
+
+.react-flow__controls-button {
+  @apply border-0 bg-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100;
+}
