@@ -22,6 +22,9 @@ export interface Change {
   base_sig: string | null;
   head_sig: string | null;
   line: number;
+  // Vulnerability intelligence
+  vuln_category: string | null;
+  vuln_reason: string | null;
 }
 
 export interface CallIssue {
@@ -41,6 +44,7 @@ export interface GraphNodeData {
   level: Severity;
   breaking: number;
   issues: number;
+  vuln_flags: string[];
 }
 
 export interface GraphEdgeData {
@@ -48,6 +52,15 @@ export interface GraphEdgeData {
   target: string;
   symbols: string[];
   risky: boolean;
+}
+
+export interface Stats {
+  files: number;
+  symbols_compared: number;
+  breaking: number;
+  broken_calls: number;
+  duration_ms: number;
+  vuln_hits: number;
 }
 
 export interface Report {
@@ -59,13 +72,7 @@ export interface Report {
   issues: CallIssue[];
   nodes: GraphNodeData[];
   edges: GraphEdgeData[];
-  stats: {
-    files: number;
-    symbols_compared: number;
-    breaking: number;
-    broken_calls: number;
-    duration_ms: number;
-  };
+  stats: Stats;
 }
 
 export interface AgentEvent {
@@ -73,9 +80,11 @@ export interface AgentEvent {
   agent: string;
   status: "running" | "done";
   message: string;
+  progress: number;  // 0-100
+  ts: number;        // Unix timestamp
 }
 
 export type ServerEvent =
   | AgentEvent
   | { type: "report"; report: Report }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string; code?: string };

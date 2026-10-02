@@ -7,13 +7,13 @@ ParamKind = Literal["posonly", "pos_or_kw", "kw_only", "var_pos", "var_kw"]
 
 
 class FileVersion(BaseModel):
-    path: str
-    base: str = ""
-    head: str = ""
+    path: str = Field(..., min_length=1, max_length=512)
+    base: str = Field(default="", max_length=500_000)
+    head: str = Field(default="", max_length=500_000)
 
 
 class PullRequest(BaseModel):
-    title: str = "Untitled pull request"
+    title: str = Field(default="Untitled pull request", max_length=500)
     files: list[FileVersion] = Field(min_length=1, max_length=200)
 
 
@@ -44,6 +44,9 @@ class Change(BaseModel):
     base_sig: str | None = None
     head_sig: str | None = None
     line: int
+    # Vulnerability intelligence fields
+    vuln_category: str | None = None   # "security" | "injection" | "data_exposure"
+    vuln_reason: str | None = None     # Human-readable heuristic explanation
 
 
 class CallIssue(BaseModel):
@@ -63,6 +66,7 @@ class GraphNode(BaseModel):
     level: Severity
     breaking: int
     issues: int
+    vuln_flags: list[str] = Field(default_factory=list)
 
 
 class GraphEdge(BaseModel):
@@ -78,6 +82,7 @@ class Stats(BaseModel):
     breaking: int
     broken_calls: int
     duration_ms: int
+    vuln_hits: int = 0
 
 
 class Report(BaseModel):

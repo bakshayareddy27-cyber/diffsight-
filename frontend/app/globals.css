@@ -6,56 +6,65 @@
   color-scheme: dark;
 }
 
-/* ─── Body ─────────────────────────────────────────────────── */
+/* ─── Body — matte charcoal editorial, zero generic gradients ─────────────── */
 body {
-  @apply bg-zinc-950 font-sans text-zinc-200 antialiased;
+  @apply bg-[#0e0f11] font-sans text-zinc-200 antialiased;
   background-image:
-    radial-gradient(60rem 28rem at 12% -8%, rgba(139, 92, 246, 0.16), transparent),
-    radial-gradient(50rem 28rem at 96% 0%, rgba(34, 211, 238, 0.1), transparent);
+    /* Subtle amber top-left accent — engineering warmth, not AI purple */
+    radial-gradient(ellipse 60rem 18rem at -10% -5%, rgba(245,158,11,0.06), transparent),
+    /* Emerald bottom-right safety signal */
+    radial-gradient(ellipse 50rem 16rem at 110% 105%, rgba(16,185,129,0.05), transparent);
   background-attachment: fixed;
 }
 
-/* ─── Selection ─────────────────────────────────────────────── */
+/* ─── Selection ──────────────────────────────────────────────────────────────── */
 ::selection {
-  @apply bg-violet-500/30 text-zinc-50;
+  @apply bg-amber-500/20 text-zinc-50;
 }
 
-/* ─── Focus ring ─────────────────────────────────────────────── */
+/* ─── Focus ring ─────────────────────────────────────────────────────────────── */
 :focus-visible {
-  @apply outline outline-2 outline-offset-2 outline-violet-500;
+  @apply outline outline-2 outline-offset-2 outline-amber-500/70;
 }
 
-/* ─── Scrollbar ──────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  @apply bg-transparent;
-}
-::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-zinc-700;
-}
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-zinc-600;
+/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar            { width: 5px; height: 5px; }
+::-webkit-scrollbar-track      { @apply bg-transparent; }
+::-webkit-scrollbar-thumb      { @apply rounded-full bg-zinc-800 border border-zinc-700; }
+::-webkit-scrollbar-thumb:hover{ @apply bg-zinc-700; }
+*                              { scrollbar-width: thin; scrollbar-color: theme("colors.zinc.800") transparent; }
+
+/* ─── Crisp card / panel baseline ────────────────────────────────────────────── */
+.ds-panel {
+  @apply rounded-xl border border-zinc-800 bg-[#13141a] backdrop-blur;
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: theme("colors.zinc.700") transparent;
-}
+/* ─── Amber alert ring (critical / high) ─────────────────────────────────────── */
+.ds-ring-amber   { box-shadow: 0 0 0 1px rgba(245,158,11,0.35), 0 0 18px -4px rgba(245,158,11,0.18); }
+/* ─── Emerald ring (low / safe) ──────────────────────────────────────────────── */
+.ds-ring-emerald { box-shadow: 0 0 0 1px rgba(16,185,129,0.30), 0 0 16px -4px rgba(16,185,129,0.14); }
+/* ─── Rose ring (critical) ───────────────────────────────────────────────────── */
+.ds-ring-rose    { box-shadow: 0 0 0 1px rgba(251,113,133,0.35), 0 0 18px -4px rgba(251,113,133,0.16); }
 
-/* ─── ReactFlow overrides ────────────────────────────────────── */
-.react-flow__attribution {
-  background: transparent !important;
+/* ─── Live pulse dot ─────────────────────────────────────────────────────────── */
+@keyframes ds-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(1.6); }
 }
+.ds-pulse { animation: ds-pulse 1.4s ease-in-out infinite; }
 
+/* ─── ReactFlow overrides ────────────────────────────────────────────────────── */
+.react-flow__attribution { background: transparent !important; }
 .react-flow__controls {
-  @apply rounded-xl border border-white/10 bg-zinc-900/80 backdrop-blur;
+  @apply rounded-xl border border-zinc-800 bg-[#13141a]/90 backdrop-blur;
   box-shadow: none !important;
 }
-
 .react-flow__controls-button {
-  @apply border-0 bg-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100;
+  @apply border-0 bg-transparent text-zinc-500 hover:bg-zinc-800 hover:text-zinc-100 transition-colors;
+}
+.react-flow__minimap { @apply rounded-xl border border-zinc-800 bg-[#13141a]/80; }
+
+/* ─── Mono utility ───────────────────────────────────────────────────────────── */
+.ds-mono {
+  @apply font-mono text-xs tracking-tight;
 }

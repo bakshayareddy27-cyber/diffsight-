@@ -1,3 +1,4 @@
+"""WebSocket analysis endpoint with granular validation and error recovery."""
 import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -12,63 +13,72 @@ router = APIRouter()
 
 @router.websocket("/ws/analyze")
 async def analyze_socket(ws: WebSocket) -> None:
-    """
-    WebSocket endpoint for streaming risk analysis.
+    """Stream risk analysis over WebSocket.
 
-    Protocol (JSON frames):
-    - Client sends a PullRequest payload after connection is established.
-    - Server streams ``{"type": "agent", ...}`` progress frames.
-    - Server emits a final ``{"type": "report", "report": {...}}`` frame on success.
-    - Server emits ``{"type": "error", "message": "..."}`` on validation or pipeline errors.
-    - Connection is kept open for subsequent requests in the same session.
+    Protocol:
+    - Client sends a PullRequest JSON payload after connection.
+    - Server streams ``{"type":"agent",...}`` progress frames with progress% and ts.
+    - Server emits ``{"type":"report","report":{...}}`` on success.
+    - Server emits ``{"type":"error","message":"...","code":"..."}`` on failure.
+    - Connection stays open for subsequent requests in the same session.
     """
     await ws.accept()
-    logger.info("WebSocket connection accepted from %s", ws.client)
+    logger.info("ws.connected", extra={"client": str(ws.client)})
 
     try:
         while True:
+            # ── Receive ───────────────────────────────────────────────────────
             try:
                 payload = await ws.receive_json()
             except ValueError:
-                await ws.send_json(
-                    {"type": "error", "message": "Invalid JSON payload received."}
-                )
+                await ws.send_json({
+                    "type": "error", "code": "invalid_json",
+                    "message": "Invalid JSON payload \u2014 could not decode frame.",
+                })
                 continue
 
-            # Validate the incoming pull request payload
+            # ── Validate payload ──────────────────────────────────────────────
             try:
                 pr = PullRequest.model_validate(payload)
             except ValidationError as exc:
-                err_count = exc.error_count()
-                await ws.send_json(
-                    {
-                        "type": "error",
-                        "message": f"Invalid pull request payload: {err_count} validation error(s). "
-                        + "; ".join(
-                            f"{'.'.join(str(l) for l in e['loc'])}: {e['msg']}"
-                            for e in exc.errors()[:3]
-                        ),
-                    }
+                errors = exc.errors()[:5]
+                detail = "; ".join(
+                    f"{'.'.join(str(l) for l in e['loc'])}: {e['msg']}"
+                    for e in errors
+                )
+                await ws.send_json({
+                    "type":    "error",
+                    "code":    "validation_error",
+                    "message": f"Payload validation failed ({exc.error_count()} error(s)): {detail}",
+                    "errors":  errors,
+                })
+                logger.warning(
+                    "ws.validation_error",
+                    extra={"error_count": exc.error_count(), "detail": detail},
                 )
                 continue
 
-            # Run the multi-agent analysis pipeline
+            # ── Run pipeline ──────────────────────────────────────────────────
+            logger.info("ws.pipeline_start", extra={"title": pr.title, "files": len(pr.files)})
             try:
                 async for event in run_pipeline(pr):
                     await ws.send_json(event)
             except Exception as exc:
-                logger.exception("Pipeline error for PR '%s'", pr.title)
-                await ws.send_json(
-                    {"type": "error", "message": f"Analysis failed: {exc}"}
-                )
+                logger.exception("ws.pipeline_error", extra={"title": pr.title})
+                await ws.send_json({
+                    "type":    "error",
+                    "code":    "pipeline_error",
+                    "message": f"Analysis failed: {exc}",
+                })
 
     except WebSocketDisconnect:
-        logger.info("WebSocket client disconnected: %s", ws.client)
+        logger.info("ws.disconnected", extra={"client": str(ws.client)})
     except Exception as exc:
-        logger.exception("Unexpected WebSocket error: %s", exc)
+        logger.exception("ws.unexpected_error")
         try:
-            await ws.send_json(
-                {"type": "error", "message": "An unexpected server error occurred."}
-            )
+            await ws.send_json({
+                "type": "error", "code": "server_error",
+                "message": "An unexpected server error occurred.",
+            })
         except Exception:
-            pass  # client already gone
+            pass
